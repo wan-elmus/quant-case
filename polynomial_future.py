@@ -5,10 +5,14 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 
-# Step 1: Collect historical data
-df = pd.read_csv('oil_prices.ods')
+# Collect historical data
+df = pd.read_csv('oil_prices.csv')
+oilprice_data = pd.read_csv('oil_prices.csv')
 
-# Step 2: Fit a polynomial equation to the historical data
+#variable from oilprice_data
+r = oilprice_data['r']    #risk-free interest rate
+
+# Fit a polynomial equation to the historical data
 X = df['Year'].values.reshape(-1, 1)
 y = df['Average Closing Price'].values.reshape(-1, 1)
 poly = PolynomialFeatures(degree=5)  # use polynomial features up to degree 5
@@ -18,9 +22,9 @@ regressor = LinearRegression()
 regressor.fit(X_train, y_train)
 y_pred = regressor.predict(X_test)
 
-# Step 3: Refine the model using cross-validation
+# Refine the model using cross-validation
 r2_scores = []
-degrees = range(1, 11)  # try polynomial degrees up to 10
+degrees = range(1, 11)  # polynomial degrees up to 10
 for degree in degrees:
     poly = PolynomialFeatures(degree=degree)
     X_poly = poly.fit_transform(X)
@@ -35,18 +39,18 @@ X_poly = poly.fit_transform(X)
 regressor = LinearRegression()
 regressor.fit(X_poly, y)
 
-# Step 4: Use the model to make predictions
+# Use the model to make predictions
 future_years = np.array([2024, 2025, 2026]).reshape(-1, 1)
 future_X_poly = poly.transform(future_years)
 future_y_pred = regressor.predict(future_X_poly)
 
-# Step 5: Calculate futures prices using the estimated polynomial equation
+# Calculate futures prices using the estimated polynomial equation
 future_prices = future_y_pred.flatten()
 futures_price_2024 = future_prices[0]
 futures_price_2025 = future_prices[1]
 futures_price_2026 = future_prices[2]
 
-# Step 6: Calculate the implied spot prices using the futures parity conditions
+# Calculate the implied spot prices using the futures parity conditions
 spot_price_2024 = futures_price_2024 / (1 + r)**(2024 - df['Year'].iloc[-1])
 spot_price_2025 = futures_price_2025 / (1 + r)**(2025 - df['Year'].iloc[-1])
 spot_price_2026 = futures_price_2026 / (1 + r)**(2026 - df['Year'].iloc[-1])
