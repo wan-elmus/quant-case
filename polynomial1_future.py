@@ -1,9 +1,13 @@
-import numpy as np
-from scipy.stats import norm
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
 
-# Read oilprices data from CSV file
-# oilprice_data = pd.read_csv('oilprices_data.csv')
+# Collect historical data
+df = pd.read_csv('oil_prices.csv')
+
 
 oilprice_data = {'year':[2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000, 1999],
 'K':['$77.90', '$94.53', '$68.17', '$39.68', '$56.99', '$65.23', '$50.80', '$43.29', '$48.66', '$93.17', '$97.98', '$94.05', '$94.88', '$79.48', '$61.95', '$99.67', '$72.34', '$66.05', '$56.64', '$41.51', '$31.08', '$26.19', '$25.98', '$30.38', '$19.35'],
@@ -15,55 +19,66 @@ oilprice_data = {'year':[2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2
 'T':['1', '1', '1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1', '1','1'],
 'sigma':['-3.029525032', '19.51761346', '30.14522517', '-54.15826613', '18.74012985', '7.450559558', '-3.070866142', '14.96881497', '-8.343608714', '-2.114414511', '4.939783629', '-9.473684211', '3.467537943', '-2.566683442', '25.47215496', '0.030099328', '15.99391761', '4.451173354', '25.56497175', '18.79065285', '-2.863577864', '19.32035128', '-5.042340262', '15.86570112', '35.81395349', '-20.73509015', '-23.96894711', '10.35262206', '5.317417254', '15.58139535', '-3.255561584', '5.587949466', '-23.16620241', '6.726457399', '11.50712831', '-11.27113338', '5.572916667']}
 
-print(oilprice_data.columns)
+# oilprice_data = pd.read_csv('oilprices_data.csv')
 
-# Extract variables from options data
-S = oilprice_data['S'][0]    #initial stock price
-K = oilprice_data['K'][0]    #strike price
-T = oilprice_data['T'][0]    #Time to expiration
-r = oilprice_data['r'][0]    #risk-free interest rate
-sigma = oilprice_data['sigma'][0]   #volatility of the stock price
+# rename column
+# oilprice_data = oilprice_data.rename(columns={'interestRate': 'r'})
 
-# Create binomial lattice
-N = 100  # number of time steps
-dt = T / N  # length of time step
-u = np.exp(sigma * np.sqrt(dt))  # up factor
-d = 1 / u  # down factor
-p = (np.exp(r * dt) - d) / (u - d)  # probability of up move
+#variable from oilprice_data
+r = oilprice_data['r']    #risk-free interest rate
 
-# Calculate option values at expiration
-option_values = np.zeros((N+1, N+1))
-for i in range(N+1):
-    stock_price = S * u**(N-i) * d**i
-    option_values[N, i] = max(stock_price - K, 0)
+# Check for variable r 
+if 'r' in oilprice_data:
+    r = oilprice_data['r']
+else:
+    print("Column 'r' not found in dataframe.")
 
-# Work backwards through the lattice to calculate option values at earlier times
-for i in range(N-1, -1, -1):
-    for j in range(i+1):
-        option_values[i, j] = np.exp(-r * dt) * (p * option_values[i+1, j+1] + (1-p) * option_values[i+1, j])
 
-# Calculate option price and Greeks using option values at time 0
-option_price = option_values[0, 0]
-delta = (option_values[1, 1] - option_values[1, 0]) / (S * u - S * d)
-gamma = ((option_values[2, 2] - option_values[2, 1]) / (S * u**2 - S) - (option_values[2, 1] - option_values[2, 0]) / (S - S * d**2)) / ((S * u**2 - S * d**2) / 2)**2
-vega = S * np.sqrt(T) * norm.pdf((np.log(S/K) + (r + sigma**2/2)*T) / (sigma*np.sqrt(T)))
+# Fit a polynomial equation to the historical data
+X = df['Year'].values.reshape(-1, 1)
+y = df['Price'].values.reshape(-1, 1)
+poly = PolynomialFeatures(degree=5)  # use polynomial features up to degree 5
+X_poly = poly.fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X_poly, y, test_size=0.2, random_state=42)
+regressor = LinearRegression()
+regressor.fit(X_train, y_train)
+y_pred = regressor.predict(X_test)
 
-# Use put/call parity to calculate the price of a put option
-put_price = option_price + K * np.exp(-r * T) - S
+# Refine the model using cross-validation
+r2_scores = []
+degrees = range(1, 11)  # polynomial degrees up to 10
+for degree in degrees:
+    poly = PolynomialFeatures(degree=degree)
+    X_poly = poly.fit_transform(X)
+    X_train, X_test, y_train, y_test = train_test_split(X_poly, y, test_size=0.2, random_state=42)
+    regressor = LinearRegression()
+    regressor.fit(X_train, y_train)
+    y_pred = regressor.predict(X_test)
+    r2_scores.append(r2_score(y_test, y_pred))
+best_degree = degrees[np.argmax(r2_scores)]
+poly = PolynomialFeatures(degree=best_degree)
+X_poly = poly.fit_transform(X)
+regressor = LinearRegression()
+regressor.fit(X_poly, y)
 
-# Use Black-Scholes formula to calculate the price of a call option
-d1 = (np.log(S/K) + (r + sigma**2/2) * T) / (sigma * np.sqrt(T))
-d2 = d1 - sigma * np.sqrt(T)
-call_price = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+# Use the model to make predictions
+future_years = np.array([2024, 2025, 2026]).reshape(-1, 1)
+future_X_poly = poly.transform(future_years)
+future_y_pred = regressor.predict(future_X_poly)
 
-# Calculate the price of the call option using the future parity condition
-call_price_parity = put_price + S - K * np.exp(-r * T)
+# Calculate futures prices using the estimated polynomial equation
+future_prices = future_y_pred.flatten()
+futures_price_2024 = future_prices[0]
+futures_price_2025 = future_prices[1]
+futures_price_2026 = future_prices[2]
 
-# Print results
-print('Option price:', option_price)
-print('Delta:', delta)
-print('Gamma:', gamma)
-print('Vega:', vega)
-print('Put price:', put_price)
-print('Call price (Black-Scholes):', call_price)
-print('Call price (parity):', call_price_parity)
+# Calculate the implied spot prices using the futures parity conditions
+spot_price_2024 = futures_price_2024 / (1 + r)**(2024 - df['Year'].iloc[-1])
+spot_price_2025 = futures_price_2025 / (1 + r)**(2025 - df['Year'].iloc[-1])
+spot_price_2026 = futures_price_2026 / (1 + r)**(2026 - df['Year'].iloc[-1])
+
+print('Estimated futures prices:', future_prices)
+print('Implied spot prices:')
+print('2024:', spot_price_2024)
+print('2025:', spot_price_2025)
+print('2026:', spot_price_2026)

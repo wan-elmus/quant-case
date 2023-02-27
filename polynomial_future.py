@@ -7,13 +7,20 @@ from sklearn.metrics import r2_score
 
 # Collect historical data
 df = pd.read_csv('oil_prices.csv')
-oilprice_data = pd.read_csv('oil_prices.csv')
+oilprice_data = pd.read_csv('oilprices_data.csv')
 
 # rename column
-oilprice_data = oilprice_data.rename(columns={'interestRate': 'r'})
+# oilprice_data = oilprice_data.rename(columns={'interestRate': 'r'})
 
 #variable from oilprice_data
 r = oilprice_data['r']    #risk-free interest rate
+
+# Check for variable r 
+if 'r' in oilprice_data.columns:
+    r = oilprice_data['r']
+else:
+    print("Column 'r' not found in dataframe.")
+
 
 # Fit a polynomial equation to the historical data
 X = df['Year'].values.reshape(-1, 1)
