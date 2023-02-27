@@ -1,6 +1,5 @@
 Crude Oil Prices - Historical Annual Data,,,,,,
-Year,"Average
-Closing Price",Year Open,Year High,Year Low,Year Close,"Annual
+Year,Price,Year Open,Year High,Year Low,Year Close,"Annual
 % Change"
 2023,$77.90,$80.26,$81.62,$72.84,$77.05,-4.30%
 2022,$94.53,$76.08,$123.70,$71.59,$80.51,7.05%

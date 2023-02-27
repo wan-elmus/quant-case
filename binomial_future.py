@@ -4,6 +4,7 @@ import pandas as pd
 
 # Read oilprices data from CSV file
 oilprice_data = pd.read_csv('oil_prices.csv')
+print(oilprice_data.columns)
 
 # Extract variables from options data
 S = oilprice_data['S'][0]    #initial stock price

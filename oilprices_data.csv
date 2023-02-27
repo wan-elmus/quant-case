@@ -1,5 +1,5 @@
 Crude Oil Prices - Historical Annual Data,,,,,,,,
-Year,K,S,Year High,Year Low,Year Close,r,T,sigma
+Year,strikePrice,stockPrice,Year High,Year Low,Year Close,interestRate,Time,sigma
 2023,$77.90 ,$80.26 ,$81.62 ,$72.84 ,$77.05 ,-4.30%,1,-3.029525032
 2022,$94.53 ,$76.08 ,$123.70 ,$71.59 ,$80.51 ,7.05%,1,19.51761346
 2021,$68.17 ,$47.62 ,$84.65 ,$47.62 ,$75.21 ,55.01%,1,30.14522517

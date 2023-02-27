@@ -9,12 +9,15 @@ from sklearn.metrics import r2_score
 df = pd.read_csv('oil_prices.csv')
 oilprice_data = pd.read_csv('oil_prices.csv')
 
+# rename column
+oilprice_data = oilprice_data.rename(columns={'interestRate': 'r'})
+
 #variable from oilprice_data
 r = oilprice_data['r']    #risk-free interest rate
 
 # Fit a polynomial equation to the historical data
 X = df['Year'].values.reshape(-1, 1)
-y = df['Average Closing Price'].values.reshape(-1, 1)
+y = df['Price'].values.reshape(-1, 1)
 poly = PolynomialFeatures(degree=5)  # use polynomial features up to degree 5
 X_poly = poly.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X_poly, y, test_size=0.2, random_state=42)
